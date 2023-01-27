@@ -27,7 +27,7 @@ public sealed class WorldGenerator
             }
         }
 
-        return new WorldModel(size, nodes, new uint[size.x,size.y], 0);
+        return new WorldModel(size, nodes, new UnitModel[size.x, size.y]);
     }
 }
 

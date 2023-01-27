@@ -26,6 +26,14 @@ namespace Permutation
                     _timeline.CurrentTime, _timeline.CurrentTime + step,
                     CommandType.Move));
         }
+        
+        public void AddNewUnit(in Vector2Int pos, in uint id, in uint teamId)
+        {
+            _list.Add(new
+                PermutationUnit( id, teamId, pos, pos,
+                    _timeline.CurrentTime, _timeline.CurrentTime,
+                    CommandType.Create));
+        }
 
         public void Send()
         {
