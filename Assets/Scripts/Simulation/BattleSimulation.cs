@@ -34,6 +34,7 @@ namespace Simulation
 
             _search = new AStarSearch(_graph.nodeCount);
             _previousTime = _time.CurrentTime;
+            _permutation.Send();
         }
 
         private (UnitModel, Vector2Int) AddRandomUnit(in uint teamId)
@@ -88,6 +89,7 @@ namespace Simulation
                     _permutation.AddMoveUnit(_arena.Team1Pos, nextNode1.Position, delta);
                     _arena.Team1Pos = nextNode1.Position;
                 }
+                _permutation.Send();
             }
 
             return BattleStatus.Active;

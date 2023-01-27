@@ -30,6 +30,7 @@ namespace UnityView
             _start = start;
             _end = end;
             _lerpSpeed = deltaTime;
+            _tr.position = _start;
         }
 
         public void OnActivate()
