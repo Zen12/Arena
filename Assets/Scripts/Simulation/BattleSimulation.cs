@@ -42,7 +42,7 @@ namespace Simulation
             var x = _random.GetRandom(0, _model.Size.x);
             var y = _random.GetRandom(0, _model.Size.y);
 
-            // prevents putting same unit on same place
+            // prevents putting unit on used place
             if (_model.Units[x, y].Id != 0)
             {
                 return AddRandomUnit(teamId);
