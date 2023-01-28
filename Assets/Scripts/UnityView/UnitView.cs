@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 namespace UnityView
@@ -13,6 +14,8 @@ namespace UnityView
         private CommandType _command;
         private float _startTime;
         private float _endTime;
+
+        private Coroutine _lastRoutine;
 
         private void Awake()
         {
@@ -35,6 +38,18 @@ namespace UnityView
             _startTime = startTime;
             _endTime = endTime;
             _tr.position = _start;
+
+            if (_lastRoutine != null)
+            {
+                StopCoroutine(_lastRoutine);
+            }
+            
+            _tr.localScale = Vector3.one;
+
+            if (commandType == CommandType.Attack)
+            {
+                _lastRoutine = StartCoroutine(ScaleRoutine());
+            }
         }
 
         public void OnActivate()
@@ -59,6 +74,26 @@ namespace UnityView
                 _tr.position = Vector3.Lerp(_start, _end, lerp);
             }
 
+        }
+
+        private IEnumerator ScaleRoutine()
+        {
+            var delta = 0f;
+
+            while (delta < 1f)
+            {
+                _tr.localScale = Vector3.Lerp(Vector3.one, Vector3.one * 2f, delta);
+                delta += Time.deltaTime;
+            }
+
+            delta = 0f;
+            
+            while (delta < 1f)
+            {
+                _tr.localScale = Vector3.Lerp(Vector3.one, Vector3.one * 2f, 1 - delta);
+                delta += Time.deltaTime;
+                yield return null;
+            }
         }
     }
 }

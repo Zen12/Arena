@@ -114,7 +114,7 @@ namespace Simulation
             if (step < 0)
                 return new Vector2Int(-1, -1); // something is wrong!
             
-            if (step == 1) // attack
+            if (step <= 2) // attack
             {
                 _permutation.AddAttackUnit(unit.Id, unit.TeamId, 
                     new Vector2Int(x,y), closestPos, deltaTime);
@@ -131,21 +131,37 @@ namespace Simulation
                 var index = 0;
                 foreach (var n in path)
                 {
-                    if (index >= 1)
+                    if (index == 1)
                     {
                         node = (Node)n;
-                        break; // need second first
+                        break; // need second
                     }
 
                     index++;
                 }
                 
+                if (index == 2) // at destination
+                    return new Vector2Int(-1, -1);
+                
                 if (node.Id == -1) // not found path...
-                    return new Vector2Int(-1, -1); 
+                    return new Vector2Int(-1, -1);
+
+                var p = new Vector2Int(x, y);
+
+                // preventing to move to same position
+                if (_permutation.CurrentPermutation.Exists(_ => _.Pos2 == p || _.Pos1 == p))
+                {
+                    return new Vector2Int(-1, -1);
+                }
+
+                if (_units[node.Position.x, node.Position.y].TeamId != 0)
+                {
+                    return new Vector2Int(-1, -1);
+                }
                 
                 
                 _permutation.AddMoveUnit(unit.Id, unit.TeamId, 
-                    new Vector2Int(x,y), node.Position, deltaTime);
+                    p, node.Position, deltaTime);
 
                 return node.Position;
             }
@@ -164,16 +180,12 @@ namespace Simulation
                         continue;
                     if (i >= maxSize.x)
                         continue;
-                    if (i == x)
-                        continue;
-                    
-                    for (int j = x - currentSize; j < y + currentSize; j++)
+
+                    for (int j = y - currentSize; j < y + currentSize; j++)
                     {
                         if (j < 0)
                             continue;
                         if (j >= maxSize.y)
-                            continue;
-                        if (j == y)
                             continue;
 
                         var teamId = _units[i, j].TeamId;
@@ -185,7 +197,7 @@ namespace Simulation
                 }
 
                 currentSize++;
-                if (currentSize >= maxSize.x && currentSize >= maxSize.y)
+                if (currentSize > maxSize.x && currentSize > maxSize.y)
                     break;
             }
 

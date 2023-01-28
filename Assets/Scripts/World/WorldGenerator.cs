@@ -22,7 +22,7 @@ public sealed class WorldGenerator
             for (int j = 0; j < size.y; j++)
             {
                 var r = _random.GetRandom(0, 3); // show how height of terrain
-                var node = new Node(new Vector2Int(i, j), r,graph.nodeCount);
+                var node = new Node(new Vector2Int(i, j), r * 2,graph.nodeCount);
                 nodes[i, j] = node;
                 
                 // it of node is generated only after you added to graph

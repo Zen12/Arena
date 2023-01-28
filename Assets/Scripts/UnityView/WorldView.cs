@@ -65,6 +65,12 @@ namespace UnityView
                     var view = _units.Find(_ => _.Id == unit.Id);
                     view.ApplyChange(start, end,unit.StartTime, unit.EndTime, CommandType.Move);
                 }
+                
+                if (unit.CommandType == CommandType.Attack)
+                {
+                    var view = _units.Find(_ => _.Id == unit.Id);
+                    view.ApplyChange(start, end,unit.StartTime, unit.EndTime, CommandType.Attack);
+                }
             }
         }
         

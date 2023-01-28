@@ -75,7 +75,7 @@ public readonly struct PermutationUnit
 
 public enum CommandType
 {
-    Idle, Move, Attack, Create
+    Idle, Move, Attack, Create, Die
 }
 
 
