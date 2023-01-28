@@ -23,7 +23,7 @@ public interface IPermutationListener
 
 public interface IEngineView
 {
-    void ApplyChange(Vector3 start, Vector3 end, float deltaTime, CommandType commandType);
+    void ApplyChange(Vector3 start, Vector3 end, float startTime, float endTime, CommandType commandType);
 
     void OnActivate();
     void OnDeactivate();
@@ -57,19 +57,6 @@ public readonly struct PermutationUnit
     public readonly float StartTime;
     public readonly float EndTime;
     public readonly CommandType CommandType;
-
-    public PermutationUnit(in Vector2Int pos1, in Vector2Int pos2, 
-        in float startTime, in float endTime, 
-        in CommandType commandType)
-    {
-        Id = uint.MaxValue;
-        TeamId = uint.MaxValue;
-        Pos1 = pos1;
-        Pos2 = pos2;
-        StartTime = startTime;
-        EndTime = endTime;
-        CommandType = commandType;
-    }
     
     public PermutationUnit(in uint id,in uint team,
         in Vector2Int pos1, in Vector2Int pos2,
@@ -92,17 +79,17 @@ public enum CommandType
 }
 
 
-public struct Node : INode
+public readonly struct Node : INode
 {
-    public int Id { get; internal set; }
+    public readonly int Id;
     public readonly Vector2Int Position;
     public readonly int Value;
 
-    public Node(Vector2Int position, int value)
+    public Node(Vector2Int position, int value, int id)
     {
         Position = position;
         Value = value;
-        Id = default;
+        Id = id;
     }
 }
 
@@ -125,12 +112,10 @@ public readonly struct WorldModel
 {
     public readonly Vector2Int Size;
     public readonly Node[,] Nodes;
-    public readonly UnitModel[,] Units;
 
-    public WorldModel(in Vector2Int size, Node[,] nodes, UnitModel[,] units)
+    public WorldModel(in Vector2Int size, Node[,] nodes)
     {
         Size = size;
         Nodes = nodes;
-        Units = units;
     }
 }

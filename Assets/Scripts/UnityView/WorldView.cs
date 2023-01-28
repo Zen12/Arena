@@ -8,10 +8,12 @@ namespace UnityView
     {
         [SerializeField] private PrefabDatabase _database;
         private GameObject[,] _grid;
+        private ITimeline _timeline;
         private readonly List<UnitView> _units = new List<UnitView>();
 
-        public void GenerateWorld(WorldModel model)
+        public void GenerateWorld(WorldModel model, ITimeline time)
         {
+            _timeline = time;
             var prefab = _database.PrefabGridView;
             var size = model.Size;
             _grid = new GameObject[size.x, size.y];
@@ -35,9 +37,15 @@ namespace UnityView
             {
                 if (unit.CommandType == CommandType.Idle)
                     continue;
+                
+                var startPlatform = _grid[unit.Pos1.x, unit.Pos1.y];
+                var endPlatform = _grid[unit.Pos2.x, unit.Pos2.y];
+                var start = startPlatform.transform.position + Vector3.up;
+                var end = endPlatform.transform.position + Vector3.up;
 
                 if (unit.CommandType == CommandType.Create)
                 {
+                    // hacky but can be redone to find prefab by team id
                     var prefab = _database.Team1Unit;
                     if (unit.TeamId == 1)
                     {
@@ -45,12 +53,17 @@ namespace UnityView
                     }
 
                     var obj = GameObject.Instantiate(prefab);
-                    var startPlatform = _grid[unit.Pos1.x, unit.Pos1.y];
-                    var endPlatform = _grid[unit.Pos2.x, unit.Pos2.y];
-                    var start = startPlatform.transform.position + Vector3.up;
-                    var end = endPlatform.transform.position + Vector3.up;
-                    obj.ApplyChange(start, end, unit.EndTime - unit.StartTime, CommandType.Create);
+                    obj.Timeline = _timeline;
+
+                    obj.ApplyChange(start, end, unit.StartTime, unit.EndTime, CommandType.Create);
+                    obj.Id = unit.Id;
                     _units.Add(obj);
+                }
+
+                if (unit.CommandType == CommandType.Move)
+                {
+                    var view = _units.Find(_ => _.Id == unit.Id);
+                    view.ApplyChange(start, end,unit.StartTime, unit.EndTime, CommandType.Move);
                 }
             }
         }

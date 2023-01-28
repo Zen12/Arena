@@ -15,7 +15,7 @@ namespace Permutation.Editor
             per.Add(listener);
 
             // Act
-            per.AddMoveUnit(Vector2Int.one, Vector2Int.up, 1f);
+            per.AddMoveUnit(1, 1, Vector2Int.one, Vector2Int.up, 1f);
             per.Send();
             
             // Should

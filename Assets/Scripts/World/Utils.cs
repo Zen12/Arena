@@ -8,15 +8,24 @@ namespace World
         public static Graph GetGraph(WorldModel model)
         {
             var size = model.Size;
-            var nodes = model.Nodes;
             var graph = new Graph();
-            for (int i = 0; i < size.x - 1; i+=2)
+
+            for (int i = 0; i < size.x; i++)
             {
-                for (int j = 0; j < size.y - 1; j+=2)
+                for (int j = 0; j < size.y; j++)
                 {
-                    var current = nodes[i, j];
-                    var right = nodes[i + 1, j];
-                    var down = nodes[i, j + 1];
+                    graph.AddNode(model.Nodes[i, j]);
+                }
+            }
+
+            for (int i = 0; i < size.x - 1; i++)
+            {
+                for (int j = 0; j < size.y - 1; j++)
+                {
+                    var current = model.Nodes[i, j];
+                    var right = model.Nodes[i + 1, j];
+                    var down = model.Nodes[i, j + 1];
+
 
                     var price = Mathf.Abs(current.Value - right.Value);
                     graph.AddEdge(current.Id, right.Id, price);

@@ -5,11 +5,14 @@ namespace UnityView
 {
     public class UnitView : MonoBehaviour, IEngineView
     {
+        public uint Id;
+        public ITimeline Timeline;
         private Transform _tr;
         private Vector3 _start;
         private Vector3 _end;
-        private float _lerpSpeed;
         private CommandType _command;
+        private float _startTime;
+        private float _endTime;
 
         private void Awake()
         {
@@ -24,12 +27,13 @@ namespace UnityView
             _command = CommandType.Idle;
         }
 
-        public void ApplyChange(Vector3 start, Vector3 end, float deltaTime, CommandType commandType)
+        public void ApplyChange(Vector3 start, Vector3 end, float startTime, float endTime, CommandType commandType)
         {
             _command = commandType;
             _start = start;
             _end = end;
-            _lerpSpeed = deltaTime;
+            _startTime = startTime;
+            _endTime = endTime;
             _tr.position = _start;
         }
 
@@ -51,8 +55,8 @@ namespace UnityView
 
             if (_command == CommandType.Move)
             {
-                var deltaTime = Time.deltaTime;
-                _tr.position = Vector3.Lerp(_start, _end, deltaTime * _lerpSpeed);
+                var lerp = Mathf.InverseLerp(_startTime, _endTime, Timeline.CurrentTime);
+                _tr.position = Vector3.Lerp(_start, _end, lerp);
             }
 
         }

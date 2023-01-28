@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Permutation;
@@ -14,13 +15,14 @@ public class EntryPoint : MonoBehaviour
     
     IEnumerator Start()
     {
+        _time = new UnityTime();
         var random = new UnityRandom();
         var worldGen = new WorldGenerator(random);
+        
         var model = worldGen.GenerateRandom(_size);
         var unityWorld = GetComponent<WorldView>();
-        unityWorld.GenerateWorld(model);
+        unityWorld.GenerateWorld(model, _time);
         
-        _time = new UnityTime();
 
         var permutation = new PermutationController(_time);
         permutation.Add(unityWorld);
@@ -30,13 +32,13 @@ public class EntryPoint : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(1f);
-            _time.CurrentTime += 1f;
+            var result = _simulation.NextMoves();
         }
     }
 
-    public void Update()
+    private void Update()
     {
-        //var result = _simulation.NextMoves();
+        _time.CurrentTime += Time.deltaTime;
     }
 }
 

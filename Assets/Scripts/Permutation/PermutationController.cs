@@ -10,6 +10,7 @@ namespace Permutation
         
         private readonly List<IPermutationListener> _listeners = new List<IPermutationListener>();
         private readonly List<PermutationUnit> _list = new List<PermutationUnit>();
+        public List<PermutationUnit> CurrentPermutation => _list;
 
         public PermutationController(ITimeline timeline)
         {
@@ -18,11 +19,19 @@ namespace Permutation
 
         public void Add(IPermutationListener l) => _listeners.Add(l);
         public void Remove(IPermutationListener l) => _listeners.Remove(l);
-
-        public void AddMoveUnit(in Vector2Int startPos, in Vector2Int endPos, float step)
+        
+        public void AddAttackUnit(in uint id, in uint teamId, in Vector2Int startPos, in Vector2Int endPos, float step)
         {
             _list.Add(new
-                PermutationUnit(startPos, endPos,
+                PermutationUnit(id, teamId, startPos, endPos,
+                    _timeline.CurrentTime, _timeline.CurrentTime + step,
+                    CommandType.Attack));
+        }
+
+        public void AddMoveUnit(in uint id, in uint teamId, in Vector2Int startPos, in Vector2Int endPos, float step)
+        {
+            _list.Add(new
+                PermutationUnit(id, teamId, startPos, endPos,
                     _timeline.CurrentTime, _timeline.CurrentTime + step,
                     CommandType.Move));
         }

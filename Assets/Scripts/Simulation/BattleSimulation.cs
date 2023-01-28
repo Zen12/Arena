@@ -12,105 +12,197 @@ namespace Simulation
         private readonly ITimeline _time;
         private readonly PermutationController _permutation;
         private readonly WorldModel _model;
-        private readonly Graph _graph;
+        private readonly Graph _originalGraph;
         private readonly AStarSearch _search;
         private readonly IRandom _random;
 
         private uint _currentSequenceId = 1;
         private float _unitMoveSpeed = 1f;
         private float _previousTime;
-        private SimulationArena _arena = new SimulationArena();
+
+        private UnitModel[,] _units;
 
         public BattleSimulation(ITimeline time, PermutationController permutation, WorldModel model, IRandom random)
         {
+            var size = model.Size;
             _time = time;
             _permutation = permutation;
             _model = model;
             _random = random;
-            _graph = Utils.GetGraph(model);
-            
-            (_arena.Team1,_arena.Team1Pos) = AddRandomUnit(0);
-            (_arena.Team2,_arena.Team2Pos) = AddRandomUnit(1);
+            _originalGraph = Utils.GetGraph(model);
 
-            _search = new AStarSearch(_graph.nodeCount);
+            _units = new UnitModel[size.x, size.y];
+            
+            for (int i = 0; i < size.x; i++)
+            {
+                for (int j = 0; j <  size.y; j++)
+                {
+                    _units[i, j] = new UnitModel(0, 0, 1);
+                }
+            }
+            
+            AddRandomUnit(1);
+            AddRandomUnit(2);
+
+            _search = new AStarSearch(_originalGraph.nodeCount);
             _previousTime = _time.CurrentTime;
             _permutation.Send();
         }
 
-        private (UnitModel, Vector2Int) AddRandomUnit(in uint teamId)
+        private void AddRandomUnit(in uint teamId)
         {
             var x = _random.GetRandom(0, _model.Size.x);
             var y = _random.GetRandom(0, _model.Size.y);
 
-            // prevents putting unit on used place
-            if (_model.Units[x, y].Id != 0)
+            if (_units[x, y].TeamId != 0)
             {
-                return AddRandomUnit(teamId);
+                AddRandomUnit(teamId);
+                return;
             }
 
             var hp = (uint)_random.GetRandom(2, 5);
 
             var p = new Vector2Int(x, y);
             
-
-            _model.Units[x, y] = new UnitModel(_currentSequenceId, teamId, hp);
+            var unit = new UnitModel(_currentSequenceId, teamId, hp);
             _permutation.AddNewUnit(p, _currentSequenceId, teamId);
+            _units[x, y] = unit;
             _currentSequenceId++;
-            return (_model.Units[x, y], p);
         }
 
         public BattleStatus NextMoves()
         {
             var delta = _time.CurrentTime - _previousTime;
-            
-            var p1Node = _model.Nodes[_arena.Team1Pos.x, _arena.Team2Pos.y];
-            var p2Node = _model.Nodes[_arena.Team2Pos.x, _arena.Team2Pos.y];
-            var path1 = _search.FindPath(_graph, p1Node.Id, p2Node.Id, NoHeuristic);
-            var path2 = _search.FindPath(_graph, p2Node.Id, p1Node.Id, NoHeuristic);
+            _previousTime = _time.CurrentTime;
 
-            var nextNode1 = (Node) path1.First();
-            var nextNode2 = (Node) path2.First();
+            var size = _model.Size;
 
-            // doesn't reach each other
-            if (nextNode1.Id != p2Node.Id)
+            for (int i = 0; i < size.x; i++)
             {
+                for (int j = 0; j < size.y; j++)
                 {
-                    var old = _model.Units[_arena.Team2Pos.x, _arena.Team2Pos.y];
-                    _model.Units[_arena.Team2Pos.x, _arena.Team2Pos.y] = new UnitModel();
-                    _model.Units[nextNode2.Position.x, nextNode2.Position.y] = old;
-                    _permutation.AddMoveUnit(_arena.Team2Pos, nextNode2.Position, delta);
-                    _arena.Team2Pos = nextNode2.Position;
+                    var unit = _units[i, j];
+                    if (unit.TeamId != 0)
+                    {
+                        _ = AddUnitBehaviour(i, j, delta);
+                    }
                 }
-                
-                {
-                    var old = _model.Units[_arena.Team1Pos.x, _arena.Team1Pos.y];
-                    _model.Units[_arena.Team1Pos.x, _arena.Team1Pos.y] = new UnitModel();
-                    _model.Units[nextNode1.Position.x, nextNode1.Position.y] = old;
-                    _permutation.AddMoveUnit(_arena.Team1Pos, nextNode1.Position, delta);
-                    _arena.Team1Pos = nextNode1.Position;
-                }
-                _permutation.Send();
             }
+
+
+            foreach (var unit in _permutation.CurrentPermutation)
+            {
+                if (unit.CommandType == CommandType.Move)
+                {
+                    var old = _units[unit.Pos1.x, unit.Pos1.y];
+                    _units[unit.Pos1.x, unit.Pos1.y] = new UnitModel(0, 0, 0);
+                    _units[unit.Pos2.x, unit.Pos2.y] = old;
+                }
+            }
+            
+            _permutation.Send();
+
 
             return BattleStatus.Active;
         }
+
+        private Vector2Int AddUnitBehaviour(in int x,in int y, in float deltaTime)
+        {
+            var unit = _units[x, y];
+            var (closestPos, step) = FindClosestEnemy(x, y);
+            
+            if (step < 0)
+                return new Vector2Int(-1, -1); // something is wrong!
+            
+            if (step == 1) // attack
+            {
+                _permutation.AddAttackUnit(unit.Id, unit.TeamId, 
+                    new Vector2Int(x,y), closestPos, deltaTime);
+                return new Vector2Int(x, y);
+            }
+            else // move to it
+            {
+                var p1Node = _model.Nodes[x, y];
+                var p2Node = _model.Nodes[closestPos.x, closestPos.y];
+                var path = _search.FindPath(_originalGraph, p1Node.Id, p2Node.Id, NoHeuristic);
+
+                var node = new Node(Vector2Int.down, 0, -1);
+
+                var index = 0;
+                foreach (var n in path)
+                {
+                    if (index >= 1)
+                    {
+                        node = (Node)n;
+                        break; // need second first
+                    }
+
+                    index++;
+                }
+                
+                if (node.Id == -1) // not found path...
+                    return new Vector2Int(-1, -1); 
+                
+                
+                _permutation.AddMoveUnit(unit.Id, unit.TeamId, 
+                    new Vector2Int(x,y), node.Position, deltaTime);
+
+                return node.Position;
+            }
+        }
+
+        private (Vector2Int, int) FindClosestEnemy(in int x,in int y)
+        {
+            var maxSize = _model.Size;
+            var currentSize = 1;
+            var startTeamId = _units[x, y].TeamId;
+            while (true)
+            {
+                for (int i = x - currentSize; i < x + currentSize; i++)
+                {
+                    if (i < 0)
+                        continue;
+                    if (i >= maxSize.x)
+                        continue;
+                    if (i == x)
+                        continue;
+                    
+                    for (int j = x - currentSize; j < y + currentSize; j++)
+                    {
+                        if (j < 0)
+                            continue;
+                        if (j >= maxSize.y)
+                            continue;
+                        if (j == y)
+                            continue;
+
+                        var teamId = _units[i, j].TeamId;
+                        if (teamId == 0 || teamId == startTeamId)
+                            continue;
+
+                        return (new Vector2Int(i, j), currentSize);
+                    }
+                }
+
+                currentSize++;
+                if (currentSize >= maxSize.x && currentSize >= maxSize.y)
+                    break;
+            }
+
+            return (Vector2Int.zero, -1);
+        }
+        
         
         private static float NoHeuristic(IGraph graph, INode a, INode b)
         {
             return 0f;
         }
+        
     }
 
     public enum BattleStatus
     {
         Active, Finish
     }
-
-    public class SimulationArena
-    {
-        public UnitModel Team1;
-        public Vector2Int Team1Pos;
-        public UnitModel Team2;
-        public Vector2Int Team2Pos;
-    }
+    
 }
