@@ -33,6 +33,11 @@ public class EntryPoint : MonoBehaviour
         {
             yield return new WaitForSeconds(1f);
             var result = _simulation.NextMoves();
+            if (result == BattleStatus.Finish)
+            {
+                Debug.Log("Battle Finish!");
+                break;
+            }
         }
     }
 

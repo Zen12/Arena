@@ -98,7 +98,15 @@ namespace Simulation
                     _units[unit.Pos1.x, unit.Pos1.y] = new UnitModel(0, 0, 0);
                     _units[unit.Pos2.x, unit.Pos2.y] = old;
                 }
+                
+                if (unit.CommandType == CommandType.Die)
+                {
+                    _units[unit.Pos1.x, unit.Pos1.y] = new UnitModel(0, 0, 0);
+                }
             }
+
+            if (_permutation.CurrentPermutation.Count == 0)
+                return BattleStatus.Finish;
             
             _permutation.Send();
 
@@ -116,6 +124,14 @@ namespace Simulation
             
             if (step <= 2) // attack
             {
+                var enemy = _units[closestPos.x, closestPos.y];
+                _units[closestPos.x, closestPos.y] = new UnitModel(enemy.Id, enemy.TeamId, enemy.Health - 1);
+               
+                enemy = _units[closestPos.x, closestPos.y];
+                if (enemy.Health <= 0)
+                {
+                    _permutation.AddDieUnit(enemy.Id, enemy.TeamId, closestPos, closestPos, deltaTime);
+                }
                 _permutation.AddAttackUnit(unit.Id, unit.TeamId, 
                     new Vector2Int(x,y), closestPos, deltaTime);
                 return new Vector2Int(x, y);
@@ -127,21 +143,27 @@ namespace Simulation
                 var path = _search.FindPath(_originalGraph, p1Node.Id, p2Node.Id, NoHeuristic);
 
                 var node = new Node(Vector2Int.down, 0, -1);
+                var lastNode = new Node(Vector2Int.down, 0, -1);
 
                 var index = 0;
                 foreach (var n in path)
                 {
                     if (index == 1)
                     {
+                        // need second
                         node = (Node)n;
-                        break; // need second
                     }
 
+                    lastNode = (Node)n;
                     index++;
                 }
-                
-                if (index == 2) // at destination
-                    return new Vector2Int(-1, -1);
+
+                if (index == 2)
+                {
+                    var enemy = _units[lastNode.Position.x, lastNode.Position.y];
+                    _permutation.AddTakeDamageUnit(enemy.Id, enemy.TeamId, closestPos, closestPos, deltaTime);
+                    return lastNode.Position;
+                }
                 
                 if (node.Id == -1) // not found path...
                     return new Vector2Int(-1, -1);

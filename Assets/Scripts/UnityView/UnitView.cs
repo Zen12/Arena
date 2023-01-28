@@ -39,16 +39,21 @@ namespace UnityView
             _endTime = endTime;
             _tr.position = _start;
 
-            if (_lastRoutine != null)
+            if (_lastRoutine != null && gameObject.activeSelf)
             {
                 StopCoroutine(_lastRoutine);
             }
             
             _tr.localScale = Vector3.one;
 
-            if (commandType == CommandType.Attack)
+            if (commandType == CommandType.Attack && gameObject.activeSelf)
             {
                 _lastRoutine = StartCoroutine(ScaleRoutine());
+            }
+            
+            if (commandType == CommandType.Die)
+            {
+                OnDeactivate();
             }
         }
 
@@ -60,6 +65,7 @@ namespace UnityView
 
         public void OnDeactivate()
         {
+            StopAllCoroutines();
             gameObject.SetActive(false);
         }
 

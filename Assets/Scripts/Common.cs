@@ -75,7 +75,7 @@ public readonly struct PermutationUnit
 
 public enum CommandType
 {
-    Idle, Move, Attack, Create, Die
+    Idle, Move, Attack, Create, TakeDamage, Die
 }
 
 
@@ -93,11 +93,11 @@ public readonly struct Node : INode
     }
 }
 
-public readonly struct UnitModel
+public struct UnitModel
 {
     public readonly uint Id;
     public readonly uint TeamId;
-    public readonly uint Health;
+    public uint Health;
 
     public UnitModel(uint id, uint teamId, uint health)
     {

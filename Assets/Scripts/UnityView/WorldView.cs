@@ -59,17 +59,10 @@ namespace UnityView
                     obj.Id = unit.Id;
                     _units.Add(obj);
                 }
-
-                if (unit.CommandType == CommandType.Move)
+                else
                 {
                     var view = _units.Find(_ => _.Id == unit.Id);
-                    view.ApplyChange(start, end,unit.StartTime, unit.EndTime, CommandType.Move);
-                }
-                
-                if (unit.CommandType == CommandType.Attack)
-                {
-                    var view = _units.Find(_ => _.Id == unit.Id);
-                    view.ApplyChange(start, end,unit.StartTime, unit.EndTime, CommandType.Attack);
+                    view.ApplyChange(start, end,unit.StartTime, unit.EndTime, unit.CommandType);
                 }
             }
         }

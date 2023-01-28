@@ -20,6 +20,22 @@ namespace Permutation
         public void Add(IPermutationListener l) => _listeners.Add(l);
         public void Remove(IPermutationListener l) => _listeners.Remove(l);
         
+        public void AddTakeDamageUnit(in uint id, in uint teamId, in Vector2Int startPos, in Vector2Int endPos, float step)
+        {
+            _list.Add(new
+                PermutationUnit(id, teamId, startPos, endPos,
+                    _timeline.CurrentTime, _timeline.CurrentTime + step,
+                    CommandType.TakeDamage));
+        }
+        
+        public void AddDieUnit(in uint id, in uint teamId, in Vector2Int startPos, in Vector2Int endPos, float step)
+        {
+            _list.Add(new
+                PermutationUnit(id, teamId, startPos, endPos,
+                    _timeline.CurrentTime, _timeline.CurrentTime + step,
+                    CommandType.Die));
+        }
+        
         public void AddAttackUnit(in uint id, in uint teamId, in Vector2Int startPos, in Vector2Int endPos, float step)
         {
             _list.Add(new
